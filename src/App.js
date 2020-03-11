@@ -18,8 +18,8 @@ import {
   GlobalStyle
 } from "./utils.js";
 
-// const CMEC_API_URL = "https://cmec-backend.herokuapp.com/api";
-const CMEC_API_URL = "http://localhost:5000/api";
+const CMEC_API_URL = "https://cmec-backend.herokuapp.com/api";
+// const CMEC_API_URL = "http://localhost:5000/api";
 
 const title = "CMEC Data Heatmap";
 
