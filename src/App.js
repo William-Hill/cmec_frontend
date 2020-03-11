@@ -99,6 +99,8 @@ function App() {
       let columns;
       if (allRegions) {
         columns = data[row][selectedScalar][model];
+      } else if (columnsHyperslab === "scalar") {
+        columns = data[row][model];
       } else {
         columns = data[row][selectedScalar];
       }
@@ -157,7 +159,17 @@ function App() {
         });
         console.log("regionList:", regionList);
         setTableHeaderValues(regionList);
+      } else if (columnsHyperslab === "scalar") {
+        console.log("region in columns = scalar:", region);
+        data = response.data["RESULTS"][region["value"]];
+        responseRows = Object.keys(response.data["RESULTS"][region["value"]]);
+        const newMessageObj = {
+          [responseRegion]: createTableRows(data, responseRows)
+        };
+        console.log("newMessageObj:", newMessageObj);
+        setRows(newMessageObj);
       } else {
+        console.log("in else clause");
         console.log("response:", response);
         console.log("region:", region);
         responseRegion = Object.keys(response.data["RESULTS"])[0];
