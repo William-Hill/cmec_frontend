@@ -1,5 +1,5 @@
 import React, { Fragment, useContext, useState } from "react";
-import { useGlobal, setGlobal } from "reactn";
+import { global, useGlobal, setGlobal } from "reactn";
 import * as bulmaToast from "bulma-toast";
 
 function showCheckboxErrorMessage() {
@@ -14,19 +14,38 @@ function showCheckboxErrorMessage() {
   });
 }
 
-function Hyperslabs(props) {
+function HyperslabAxisRadioSelector(props) {
   const [hyperslabOptions] = useGlobal("hyperslabs");
   let oppositeHyperslab;
-  if (props.hyperslabName === "hyperslab1") {
-    oppositeHyperslab = "hyperslab2";
+  if (props.hyperslabName === "rowsHyperslab") {
+    oppositeHyperslab = "columnsHyperslab";
   } else {
-    oppositeHyperslab = "hyperslab1";
+    oppositeHyperslab = "rowsHyperslab";
   }
 
   const [oppositeHyperslabValue] = useGlobal(oppositeHyperslab);
+  const [hyperslabsList] = useGlobal("hyperslabs");
+  const [hyperslab, setHyperslab] = useGlobal(props.hyperslabName);
+  const [availableHyperslabs, setAvailableHyperslabs] = useGlobal(
+    "availableHyperslabs"
+  );
+  const [hyperslabDropdown, setRowsHyperslabDropdown] = useGlobal(
+    props.hyperslabDropdown
+  );
+  const [global, setGlobal] = useGlobal();
+
   function updateHyperslab(changeEvent) {
     let targetID = changeEvent.target.id.split("_")[1];
-    setGlobal({ [props["hyperslabName"]]: targetID });
+    setAvailableHyperslabs(
+      hyperslabsList.filter(
+        d => ![global[oppositeHyperslab], targetID].includes(d)
+      )
+    );
+    setRowsHyperslabDropdown(props.selectedHyperslab);
+    setHyperslab(targetID);
+    setGlobal({
+      [props["hyperslabName"]]: targetID
+    });
   }
   return (
     <Fragment>
@@ -59,4 +78,4 @@ function Hyperslabs(props) {
   );
 }
 
-export default Hyperslabs;
+export default HyperslabAxisRadioSelector;

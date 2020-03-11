@@ -1,4 +1,4 @@
-import React, { setGlobal } from "reactn";
+import React, { global, setGlobal } from "reactn";
 import ReactDOM from "react-dom";
 import "./index.scss";
 import App from "./App";
@@ -8,14 +8,19 @@ import { modelNames } from "./constants.js";
 
 setGlobal({
   scalar: "Overall Score",
-  region: "global",
+  region: { label: "Global - Land", value: "global" },
   hyperslabs: ["region", "metric", "scalar", "model"],
-  hyperslab1: "scalar",
-  hyperslab2: "region",
+  rowsHyperslab: "metric",
+  rowHyperslabDropdown: "scalar",
+  columnsHyperslab: "model",
+  columnHyperslabDropdown: "region",
   model: "bcc-csm1-1",
   metric: "Ecosystem and Carbon Cycle",
-  tableHeaderValues: modelNames
+  tableHeaderValues: modelNames,
+  availableHyperslabs: ["scalar", "region"]
 });
+
+setGlobal({});
 
 ReactDOM.render(<App />, document.getElementById("root"));
 

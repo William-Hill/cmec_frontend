@@ -11,7 +11,9 @@ function Scalars(props) {
   }
 
   for (let scalar of props.scalars) {
+    // console.log("scalar:", scalar);
     var lastIndex = scalar.lastIndexOf(" ");
+    // console.log("lastIndex:", lastIndex);
     let value = scalar.substring(0, lastIndex);
     scalars.push({ label: scalar, value: value });
   }

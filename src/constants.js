@@ -24,11 +24,13 @@ export let modelNames = [
   "MeanCMIP6"
 ];
 
-export const regionOptions = {
-  "Global - Land": "global",
-  "Global - All": "globe",
-  "South America - Amazon": "southamericaamazon"
-};
+export const regionOptions = [
+  {
+    global: "Global - Land"
+  },
+  { globe: "Global - All" },
+  { southamericaamazon: "South America - Amazon" }
+];
 
 export const scalarColorScale = {
   "Ecosystem and Carbon Cycle": "#ECFFE6",

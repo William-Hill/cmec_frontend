@@ -1,4 +1,5 @@
 import React from "react";
+import { useGlobal } from "reactn";
 import {
   modelNames,
   regionOptions,
@@ -11,6 +12,7 @@ import Regions from "./Regions.js";
 import Metrics from "./Metrics.js";
 
 function HyperslabSelector(props) {
+  const [selectedRegion] = useGlobal("region");
   return (
     <div className="columns controlColumn is-vcentered">
       {props.selectedHyperslab === "model" ? (
@@ -21,28 +23,19 @@ function HyperslabSelector(props) {
 
       {props.selectedHyperslab === "scalar" ? (
         <div className="column">
-          <Scalars
-            scalars={scalarOptions}
-            scores={props.hyperslabOptions["scalar"]}
-          />
+          <Scalars scalars={scalarOptions} />
         </div>
       ) : null}
 
       {props.selectedHyperslab === "region" ? (
         <div className="column">
-          <Regions
-            regionOptions={regionOptions}
-            selectedRegion={props.hyperslabOptions["region"]}
-          />
+          <Regions regions={regionOptions} selectedRegion={selectedRegion} />
         </div>
       ) : null}
 
       {props.selectedHyperslab === "metric" ? (
         <div className="column">
-          <Metrics
-            metrics={metricOptions}
-            selectedMetric={props.hyperslabOptions["metric"]}
-          />
+          <Metrics metrics={metricOptions} />
         </div>
       ) : null}
     </div>

@@ -8,9 +8,9 @@ import ColorLegend from "./ColorLegend.js";
 import "./App.css";
 import "./animate.css";
 import { useGlobal } from "reactn";
-import Hyperslabs from "./Hyperslabs.js";
+import HyperslabAxisRadioSelector from "./Hyperslabs.js";
 import HyperslabSelector from "./HyperslabSelector.js";
-import { modelNames } from "./constants.js";
+import { modelNames, regionOptions } from "./constants.js";
 import {
   formatRowLabel,
   findHierarchyLevel,
@@ -18,8 +18,8 @@ import {
   GlobalStyle
 } from "./utils.js";
 
-const CMEC_API_URL = "https://cmec-backend.herokuapp.com/api";
-// const CMEC_API_URL = "http://localhost:5000/api";
+// const CMEC_API_URL = "https://cmec-backend.herokuapp.com/api";
+const CMEC_API_URL = "http://localhost:5000/api";
 
 const title = "CMEC Data Heatmap";
 
@@ -28,11 +28,15 @@ function App() {
   const [model] = useGlobal("model");
   const [metric] = useGlobal("metric");
   const [region] = useGlobal("region");
-  const [hyperslab1] = useGlobal("hyperslab1");
-  const [hyperslab2] = useGlobal("hyperslab2");
-  const [rows, setRows] = useState("");
+  const [hyperslabs] = useGlobal("hyperslabs");
+  const [availableHyperslabs] = useGlobal("availableHyperslabs");
+  const [rowsHyperslab] = useGlobal("rowsHyperslab");
+  const [rowHyperslabDropdown] = useGlobal("rowHyperslabDropdown");
+  const [columnHyperslabDropdown] = useGlobal("columnHyperslabDropdown");
+  const [columnsHyperslab] = useGlobal("columnsHyperslab");
+  const [rows, setRows] = useState({});
   const [apiParameters, setApiParameters] = useState({
-    region: "global",
+    region: { label: "Global - Land", value: "global" },
     metric: "",
     scalar: "Overall Score",
     model: ""
@@ -40,33 +44,41 @@ function App() {
   const [tableHeaderValues, setTableHeaderValues] = useGlobal(
     "tableHeaderValues"
   );
+  const [global, setGlobal] = useGlobal();
 
   const initialState = {
     region: "",
     metric: "",
     scalar: "",
-    model: "",
-    xAxisHyperslab: "scalar",
-    yAxisHyperslab: "region"
+    model: ""
   };
 
   function handleSubmit(event) {
     let parameters = { ...initialState };
-    const activeHyperslabs = [hyperslab1, hyperslab2];
+    const activeHyperslabs = [rowsHyperslab, columnsHyperslab];
+    console.log("activeHyperslabs:", activeHyperslabs);
+    console.log("availableHyperslabs:", availableHyperslabs);
+    // for (const activeHyperslab of activeHyperslabs) {
+    //   console.log("activeHyperslab:", activeHyperslab);
+    //   setGlobal({
+    //     [activeHyperslab]: ""
+    //   });
+    // }
 
-    if (activeHyperslabs.includes("region")) {
+    if (availableHyperslabs.includes("region")) {
+      console.log("region in handleSubmit:", region);
       parameters["region"] = region;
     }
 
-    if (activeHyperslabs.includes("metric")) {
+    if (availableHyperslabs.includes("metric")) {
       parameters["metric"] = metric;
     }
 
-    if (activeHyperslabs.includes("scalar")) {
+    if (availableHyperslabs.includes("scalar")) {
       parameters["scalar"] = selectedScalar;
     }
 
-    if (activeHyperslabs.includes("model")) {
+    if (availableHyperslabs.includes("model")) {
       parameters["model"] = model;
       setTableHeaderValues([model]);
     } else {
@@ -78,40 +90,98 @@ function App() {
     event.preventDefault();
   }
 
+  function createTableRows(data, rows, allRegions = false) {
+    console.log("data:", data);
+    let tableRows = rows.map((row, i) => {
+      console.log("row:", row);
+      let [rowLevel, hierarchyLevel] = findHierarchyLevel(row);
+      let [rowLabel, parent] = formatRowLabel(rowLevel, row);
+      let columns;
+      if (allRegions) {
+        columns = data[row][selectedScalar][model];
+      } else if (columnsHyperslab === "scalar") {
+        columns = data[row][model];
+      } else {
+        columns = data[row][selectedScalar];
+      }
+      console.log("columns:", columns);
+
+      return (
+        <TableRow
+          key={row}
+          level={hierarchyLevel}
+          parent={parent}
+          bgColor={getBackgroundColor(row)}
+          data={data[row]}
+          row={rowLabel}
+          columns={columns}
+          index={i}
+          scalar={selectedScalar}
+          models={modelNames}
+        />
+      );
+    });
+    console.log("tableRows:", tableRows);
+    return tableRows;
+  }
+
   useEffect(() => {
     axios.post(`${CMEC_API_URL}/hyperslab`, apiParameters).then(response => {
-      let rows;
+      let responseRows;
       let data;
-      if (!region) {
-        // console.log("all regions selected");
+      let responseRegion;
+      let dataByRegion = {};
+      console.log("apiParameters in response:", apiParameters);
+      console.log("rowsHyperslab:", rowsHyperslab);
+      console.log("response:", response);
+      if (rowsHyperslab === "region") {
+        console.log("all regions selected");
+        responseRegion = Object.keys(response.data["RESULTS"]);
+        console.log("responseRegion:", responseRegion);
+        console.log("response:", response);
+        for (const regionName of responseRegion) {
+          data = response.data["RESULTS"][regionName];
+          responseRows = Object.keys(response.data["RESULTS"][regionName]);
+          dataByRegion[regionName] = createTableRows(data, responseRows);
+        }
+        setRows(dataByRegion);
+      } else if (columnsHyperslab === "region") {
+        data = response.data["RESULTS"];
+        responseRows = Object.keys(response.data["RESULTS"]);
+
+        const newMessageObj = {
+          test: createTableRows(data, responseRows, true)
+        };
+        console.log("newMessageObj:", newMessageObj);
+        setRows(newMessageObj);
+        let regionList = regionOptions.map(function(el) {
+          return Object.keys(el)[0];
+        });
+        console.log("regionList:", regionList);
+        setTableHeaderValues(regionList);
+      } else if (columnsHyperslab === "scalar") {
+        console.log("region in columns = scalar:", region);
+        data = response.data["RESULTS"][region["value"]];
+        responseRows = Object.keys(response.data["RESULTS"][region["value"]]);
+        const newMessageObj = {
+          [responseRegion]: createTableRows(data, responseRows)
+        };
+        console.log("newMessageObj:", newMessageObj);
+        setRows(newMessageObj);
+      } else {
+        console.log("in else clause");
+        console.log("response:", response);
+        console.log("region:", region);
+        responseRegion = Object.keys(response.data["RESULTS"])[0];
+        responseRows = Object.keys(response.data["RESULTS"][responseRegion]);
+        data = response.data["RESULTS"][responseRegion];
+
+        const newMessageObj = {
+          [responseRegion]: createTableRows(data, responseRows)
+        };
+        console.log("newMessageObj:", newMessageObj);
+        setRows(newMessageObj);
       }
-      console.log("region:", region);
-      rows = Object.keys(response.data["RESULTS"][region]);
-      data = response.data["RESULTS"][region];
-
-      let tableRows = rows.map((row, i) => {
-        // console.log("row:", row);
-        let [rowLevel, hierarchyLevel] = findHierarchyLevel(row);
-        let [rowLabel, parent] = formatRowLabel(rowLevel, row);
-        let columns = data[row][selectedScalar];
-        // console.log("columns:", columns);
-
-        return (
-          <TableRow
-            key={row}
-            level={hierarchyLevel}
-            parent={parent}
-            bgColor={getBackgroundColor(row)}
-            data={data[row]}
-            row={rowLabel}
-            columns={columns}
-            index={i}
-            scalar={selectedScalar}
-            models={modelNames}
-          />
-        );
-      });
-      setRows(tableRows);
     });
   }, [apiParameters]);
 
@@ -124,29 +194,31 @@ function App() {
           <div className="column is-10">
             <div className="columns is-multiline">
               <div className="column is-5">
-                <Hyperslabs
-                  hyperslabName="hyperslab1"
-                  selectedHyperslab={hyperslab1}
-                  title="Hyperslab 1"
+                <HyperslabAxisRadioSelector
+                  hyperslabName="rowsHyperslab"
+                  selectedHyperslab={rowsHyperslab}
+                  hyperslabDropdown={"rowHyperslabDropdown"}
+                  title="Rows"
                 />
               </div>
               <div className="column is-5">
                 <HyperslabSelector
-                  selectedHyperslab={hyperslab1}
-                  hyperslabOptions={initialState.xAxisHyperslab}
+                  selectedHyperslab={availableHyperslabs[0]}
+                  hyperslabAxis={"rowHyperslabDropdown"}
                 />
               </div>
               <div className="column is-5">
-                <Hyperslabs
-                  hyperslabName="hyperslab2"
-                  selectedHyperslab={hyperslab2}
-                  title="Hyperslab 2"
+                <HyperslabAxisRadioSelector
+                  hyperslabName="columnsHyperslab"
+                  selectedHyperslab={columnsHyperslab}
+                  hyperslabDropdown={"columnHyperslabDropdown"}
+                  title="Columns"
                 />
               </div>
               <div className="column is-5">
                 <HyperslabSelector
-                  selectedHyperslab={hyperslab2}
-                  hyperslabOptions={initialState.yAxisHyperslab}
+                  selectedHyperslab={availableHyperslabs[1]}
+                  hyperslabAxis={"columnHyperslabDropdown"}
                 />
               </div>
             </div>
@@ -162,11 +234,15 @@ function App() {
       </form>
       <div className="columns is-mobile is-centered is-vcentered tableColumn">
         <div className="column is-four-fifths">
-          <Table
-            title={title}
-            tableHeaderValues={tableHeaderValues}
-            rows={rows}
-          />
+          {Object.keys(rows).map((hyperslabRegion, i) => {
+            return (
+              <Table
+                title={rowsHyperslab === "region" ? hyperslabRegion : null}
+                tableHeaderValues={tableHeaderValues}
+                rows={rows[hyperslabRegion]}
+              />
+            );
+          })}
         </div>
         <div className="column is-2-widescreen has-text-centered">
           <p>Relative Scale</p>

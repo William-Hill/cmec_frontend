@@ -1,31 +1,29 @@
 import React, { Fragment } from "react";
 import { useGlobal } from "reactn";
+import Select from "react-select";
 
 function Regions(props) {
   const [selectedRegion, setselectedRegion] = useGlobal("region");
+  let regionsList = [];
 
-  function updateRegion(changeEvent) {
-    setselectedRegion(changeEvent.target.value);
+  function updateRegion(region) {
+    setselectedRegion(region);
+  }
+  for (let region of props.regions) {
+    regionsList.push({
+      label: Object.values(region)[0],
+      value: Object.keys(region)[0]
+    });
   }
   return (
     <Fragment>
       <h2>Regions</h2>
-      <div className="radio">
-        {Object.keys(props.regionOptions).map((region, i) => {
-          return (
-            <label key={region} className="radio-inline scalarLabel">
-              <input
-                type="radio"
-                className="radioLabel"
-                name="regionRadio"
-                value={props.regionOptions[region]}
-                checked={selectedRegion === props.regionOptions[region]}
-                onChange={updateRegion}
-              />
-              {region}
-            </label>
-          );
-        })}
+      <div className="text-center">
+        <Select
+          onChange={updateRegion}
+          options={regionsList}
+          value={{ label: selectedRegion.label, value: selectedRegion }}
+        />
       </div>
     </Fragment>
   );
